@@ -1,15 +1,20 @@
+
 package de.jef.tinytor;
+
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class Utils {
 	public static byte[] uIntToBytes(final long data) {
-		return new byte[] { (byte) ((data >> 56) & 0xff), (byte) ((data >> 48) & 0xff), (byte) ((data >> 40) & 0xff),
-				(byte) ((data >> 32) & 0xff), (byte) ((data >> 24) & 0xff), (byte) ((data >> 16) & 0xff),
-				(byte) ((data >> 8) & 0xff), (byte) ((data >> 0) & 0xff), };
+		byte[] bytes = new byte[8];
+		ByteBuffer.wrap(bytes).putLong(data);
+		return Arrays.copyOfRange(bytes, 4, 8);
 	}
 
 	public static byte[] uShortToBytes(final int data) {
-		return new byte[] { (byte) ((data >> 24) & 0xff), (byte) ((data >> 16) & 0xff), (byte) ((data >> 8) & 0xff),
-				(byte) ((data >> 0) & 0xff), };
+		byte[] bytes = new byte[4];
+		ByteBuffer.wrap(bytes).putInt(data);
+		return Arrays.copyOfRange(bytes, 2, 4);
 	}
 	
 	public static byte[] uByteToBytes( int n ){
