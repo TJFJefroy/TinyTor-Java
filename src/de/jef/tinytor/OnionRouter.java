@@ -1,5 +1,7 @@
 package de.jef.tinytor;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -72,11 +74,21 @@ public class OnionRouter {
 	}
 
 	public void setSharedSecret(byte[] data) throws InvalidKeyException, InvalidAlgorithmParameterException,
-			NoSuchAlgorithmException, NoSuchPaddingException {
-		var forward_digest = Arrays.copyOfRange(data, 0, 20);
-		var backward_digest = Arrays.copyOfRange(data, 20, 40);
-		this.encryptionKey = new SecretKeySpec(Arrays.copyOfRange(data, 40, 56), "AES");
-		this.decryptionKey = new SecretKeySpec(Arrays.copyOfRange(data, 56, 72), "AES");
+			NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+		DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
+		var forward_digest = new byte[20];
+		var backward_digest = new byte[20];
+		var encryptionKey = new byte[16];
+		var decryptionKey = new byte[16];
+
+		in.readFully(forward_digest);
+		in.readFully(backward_digest);
+		in.readFully(encryptionKey);
+		in.readFully(decryptionKey);
+		in.close();
+
+		this.encryptionKey = new SecretKeySpec(encryptionKey, "AES");
+		this.decryptionKey = new SecretKeySpec(decryptionKey, "AES");
 
 		this.forwardDigest = setDigest(forward_digest);
 		this.backwardDigest = setDigest(backward_digest);

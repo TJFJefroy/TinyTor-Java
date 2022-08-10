@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import de.jef.tinytor.enums.RelayCommand;
 
 public class RelayCell {
+	public static final int MAXRELAYCELLDATA = Cell.MAXPAYLOADSIZE - 11;
 	private long circuitId;
 	private int command;
 	private byte[] payload;
@@ -75,4 +76,21 @@ public class RelayCell {
 
 		return responseData;
 	}
+
+	public byte[] getPayload() {
+		return payload;
+	}
+
+	public void setPayload(byte[] payload) {
+		this.payload = payload;
+	}
+
+	public long getCircuitId() {
+		return circuitId;
+	}
+
+	public int getCommand() {
+		return command;
+	}
+
 }

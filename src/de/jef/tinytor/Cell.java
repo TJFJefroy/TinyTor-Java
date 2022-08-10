@@ -89,7 +89,7 @@ public class Cell {
 		}
 	}
 
-	public boolean isVariableLengthCommand(int command) {
+	public static boolean isVariableLengthCommand(int command) {
 		if (command == CommandType.VERSIONS.getValue() || command >= 128) {
 			return true;
 		} else {
