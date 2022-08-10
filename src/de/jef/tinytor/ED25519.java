@@ -1,8 +1,7 @@
 package de.jef.tinytor;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
-import java.util.HexFormat;
-import java.util.Random;
 
 /**
  * Defines X25519 function based on curve25519-donna C implementation (mostly
@@ -726,9 +725,11 @@ public final class ED25519 {
 	 * anyway.
 	 */
 	public static byte[] generatePrivateKey() {
-		byte[] privateKey = HexFormat.of().parseHex("EA7F4F06871A27EAAE4F1243A0825E8AEFE77A572AB06548EEA1E9AF2639ECB1");
+		SecureRandom r = new SecureRandom();
+		byte[] key = new byte[32];
+		r.nextBytes(key);
 
-		return privateKey;
+		return key;
 	}
 
 	/**
