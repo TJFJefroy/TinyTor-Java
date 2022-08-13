@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import org.apache.logging.log4j.Level;
 import org.json.JSONObject;
 
 import de.jef.tinytor.enums.RelayCommand;
@@ -51,7 +50,7 @@ public class RelayCell {
 			in = new DataInputStream(new ByteArrayInputStream(data));
 
 			var data_length = in.readUnsignedShort();
-			byte[] data2 = new byte[data_length + 2];
+			byte[] data2 = new byte[data_length ];
 			in.readFully(data2);
 			in.close();
 
@@ -71,7 +70,8 @@ public class RelayCell {
 				|| relayCommand == RelayCommand.RELAY_CONNECTED.getValue()
 				|| relayCommand == RelayCommand.RELAY_END.getValue()) {
 		} else {
-			TinyTor.log.log(Level.WARN, "Unsupported relay cell: " + relayCommand);
+			TinyTor.log.warning("Unsupported relay cell: " + relayCommand);
+			throw new RuntimeException("Unsupported relay cell");
 		}
 
 		return responseData;

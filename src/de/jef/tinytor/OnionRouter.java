@@ -123,7 +123,7 @@ public class OnionRouter {
 	}
 
 	public byte[] decrypt(byte[] relay_payload) {
-		return this.forwardCipher.update(relay_payload);
+		return this.backwardCipher.update(relay_payload);
 	}
 
 	public String getNickname() {

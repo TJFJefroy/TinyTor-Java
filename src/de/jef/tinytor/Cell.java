@@ -3,7 +3,6 @@ package de.jef.tinytor;
 import java.io.IOException;
 import java.net.InetAddress;
 
-import org.apache.logging.log4j.Level;
 import org.json.JSONObject;
 
 import com.google.common.primitives.Bytes;
@@ -51,7 +50,7 @@ public class Cell {
 
 		} else {
 
-			TinyTor.log.log(Level.ERROR, "Invalid payload format for command: " + this.command);
+			TinyTor.log.severe( "Invalid payload format for command: " + this.command);
 
 		}
 

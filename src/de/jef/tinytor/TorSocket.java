@@ -7,11 +7,16 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import org.json.JSONObject;
 
@@ -50,10 +55,26 @@ public class TorSocket {
 		return res;
 	}
 
-	public void connect() throws IOException {
+	public void connect() throws IOException, GeneralSecurityException {
 
-		log.debug("Connecting socket to the guard relay...");
-		socket = (SSLSocket) SSLSocketFactory.getDefault().createSocket(guardRelay.getIp(), guardRelay.getTorPort());
+		log.info("Connecting socket to the guard relay...");
+		
+		TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+			public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+				return new X509Certificate[0];
+			}
+
+			public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {
+			}
+
+			public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {
+			}
+		} };
+
+		SSLContext sc = SSLContext.getInstance("SSL");
+		sc.init(null, trustAllCerts, new SecureRandom());
+		
+		socket = (SSLSocket) sc.getSocketFactory().createSocket(guardRelay.getIp(), guardRelay.getTorPort());
 
 		out = new DataOutputStream(socket.getOutputStream());
 		in = new DataInputStream(socket.getInputStream());
@@ -120,7 +141,7 @@ public class TorSocket {
 
 			} else if (command == CommandType.NETINFO.getValue()) {
 
-				var ourAddressLength = (int) Arrays.copyOfRange(payload, 6, 6)[0];
+				var ourAddressLength = payload[5];
 				var ourAddress = InetAddress
 						.getByAddress(
 								Arrays.copyOfRange(Arrays.copyOfRange(payload, 6, payload.length), 0, ourAddressLength))
@@ -163,15 +184,15 @@ public class TorSocket {
 				JSONObject json = new JSONObject();
 				json.put("reason", reason);
 
-				log.warn(String.format("Circuit %s destroyed, reason: %s", circuitId, reason));
+				log.warning(String.format("Circuit %s destroyed, reason: %s", circuitId, reason));
 				return new Cell(circuitId, command, json);
 			} else {
 
-				log.debug("-*-*-*-*-*- UNKNOWN_CELL -*-*-*-*-*-");
-				log.debug("Circuit ID: " + circuitId);
-				log.debug("Command type: " + command);
-				log.debug("Payload: " + payload);
-				log.debug("-*-*-*-*-*- UNKNOWN_CELL -*-*-*-*-*-");
+				log.info("-*-*-*-*-*- UNKNOWN_CELL -*-*-*-*-*-");
+				log.info("Circuit ID: " + circuitId);
+				log.info("Command type: " + command);
+				log.info("Payload: " + payload);
+				log.info("-*-*-*-*-*- UNKNOWN_CELL -*-*-*-*-*-");
 
 				JSONObject json = new JSONObject();
 				json.put("payload", payload);
@@ -184,7 +205,7 @@ public class TorSocket {
 	}
 
 	public void sendVersions() throws IOException {
-		log.debug("Sending VERSIONS cell...");
+		log.info("Sending VERSIONS cell...");
 
 		JSONObject json = new JSONObject();
 		json.put("versions", new int[] { 3, 4 });
@@ -194,30 +215,30 @@ public class TorSocket {
 	}
 
 	public void retrieveVersions() throws IOException {
-		log.debug("Retrieving VERSIONS cell...");
+		log.info("Retrieving VERSIONS cell...");
 
 		var versionsCell = retrieveCell();
 
-		log.debug("Supported link protocol versions: %s", versionsCell.getPayload().getJSONArray("versions"));
+		log.info("Supported link protocol versions: " + Arrays.toString((int[])versionsCell.getPayload().get("versions")));
 
 		this.protocolVersion = (int[]) versionsCell.getPayload().get("versions");
 	}
 
 	public void retrieveCerts() throws IOException {
-		log.debug("Retrieving CERTS cell...");
+		log.info("Retrieving CERTS cell...");
 		retrieveCell(true);
 
-		log.debug("Retrieving AUTH_CHALLENGE cell...");
+		log.info("Retrieving AUTH_CHALLENGE cell...");
 		retrieveCell(true);
 	}
 
 	public void retrieveNetInfo() throws IOException {
-		log.debug("Retrieving NET_INFO cell...");
+		log.info("Retrieving NET_INFO cell...");
 
 		var cell = retrieveCell();
 
 		this.ourPublicIp = cell.getPayload().getString("our_address");
-		log.debug("Our public IP address: " + ourPublicIp);
+		log.info("Our public IP address: " + ourPublicIp);
 	}
 
 	public byte[] retrieveRelayData(Circuit circuit) throws IOException {
@@ -244,7 +265,7 @@ public class TorSocket {
 	}
 	
 	public void sendNetInfo() throws IOException {
-        log.debug("Sending NET_INFO cell...");
+        log.info("Sending NET_INFO cell...");
 
         JSONObject json = new JSONObject();
 		json.put("timestamp", System.currentTimeMillis()/1000);

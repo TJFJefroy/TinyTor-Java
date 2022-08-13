@@ -86,7 +86,7 @@ public class Consensus {
 				}
 			}
 			if (onionRouterAmount >= limit) {
-				TinyTor.log.warn("Stopped after reading " + limit + " onion routers");
+				TinyTor.log.warning("Stopped after reading " + limit + " onion routers");
 				break;
 			}
 

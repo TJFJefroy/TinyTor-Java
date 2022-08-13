@@ -10,8 +10,6 @@ import java.util.HexFormat;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.apache.logging.log4j.Level;
-
 import com.google.common.primitives.Bytes;
 
 public class KeyAgreementNTOR {
@@ -54,9 +52,10 @@ public class KeyAgreementNTOR {
 
 		while (out.size() < n) {
 
-			var m = Bytes.concat(last, Utils.int2byte(i++));
+			var m = Bytes.concat(last, KeyAgreementNTOR.m_expand, Utils.int2byte(i++));
 			last = hmacSha256(prk, m);
 			out.write(last);
+			out.flush();
 		}
 		return Arrays.copyOfRange(out.toByteArray(), 0, n);
 	}
@@ -73,7 +72,7 @@ public class KeyAgreementNTOR {
 				KeyAgreementNTOR.PROTOCOL_ID, "Server".getBytes(StandardCharsets.UTF_8));
 
 		if (!Arrays.equals(auth, hmacSha256(KeyAgreementNTOR.t_mac, authInput))) {
-			TinyTor.log.log(Level.ERROR	, "Server handshake doesn't match verification");
+			TinyTor.log.severe( "Server handshake doesn't match verification");
 			throw new Exception("Server handshake doesn't match verification");
 		}
 		

@@ -1,12 +1,10 @@
 package de.jef.tinytor;
 
 import java.util.ArrayList;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.logging.Logger;
 
 public class TinyTor {
-	public static final Logger log = LogManager.getLogger(TinyTor.class);
+	public static final Logger log = Logger.getLogger(TinyTor.class+"");
 	private Consensus consensus;
 
 	public TinyTor() {
@@ -18,16 +16,16 @@ public class TinyTor {
 				var directoryAuthority = consensus.getRandomDirectoryAuthority();
 				var consensusUrl = directoryAuthority.getConsensusUrl();
 
-				log.debug("Using directory authority " + directoryAuthority.getName() + "...");
-				log.debug("Consensus URL: " + consensusUrl);
-				log.debug("Parsing the consensus...");
+				log.info("Using directory authority " + directoryAuthority.getName() + "...");
+				log.info("Consensus URL: " + consensusUrl);
+				log.info("Parsing the consensus...");
 
 				consensus.parseConsensus(consensusUrl);
 				break;
 
 			} catch (Exception e) {
-				log.error("Failed to parse the consensus:" + e);
-				log.error("Retrying with a different directory authority...");
+				log.severe("Failed to parse the consensus:" + e);
+				log.severe("Retrying with a different directory authority...");
 			}
 		}
 	}
@@ -39,9 +37,9 @@ public class TinyTor {
 			try {
 				guardRelay = consensus.getRandomGuardRelay();
 
-				log.debug("Using guard relay " + guardRelay.getNickname() + "...");
-				log.debug("Descriptor URL: " + guardRelay.getDescriptorUrl());
-				log.debug("Parsing the guard relays keys...");
+				log.info("Using guard relay " + guardRelay.getNickname() + "...");
+				log.info("Descriptor URL: " + guardRelay.getDescriptorUrl());
+				log.info("Parsing the guard relays keys...");
 
 				guardRelay.parseDescriptor();
 				break;

@@ -3,7 +3,7 @@ package de.jef.tinytor;
 import static de.jef.tinytor.TinyTor.log;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.Inet4Address;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,8 +57,8 @@ public class Circuit {
 
 	public void create(OnionRouter guardRelay) throws Exception {
 
-		log.debug("Creating new circuit...");
-		log.debug("Circuit ID:" + circuitId);
+		log.info("Creating new circuit...");
+		log.info("Circuit ID:" + circuitId);
 		var keyAgreement = new KeyAgreementNTOR(guardRelay);
 
 		var json = new JSONObject();
@@ -71,33 +71,39 @@ public class Circuit {
 		Cell cell = this.torSocket.retrieveCell();
 
 		if (cell.getCommand() != CommandType.CREATED2.getValue()) {
-			log.error("Received command is not a CREATED2.");
+			log.severe("Received command is not a CREATED2.");
 			throw new Exception("Received command is not a CREATED2.");
 
 		}
 
 		keyAgreement.completeHandshake((byte[]) cell.getPayload().get("Y"), (byte[]) cell.getPayload().get("auth"));
 		onionRouters.add(guardRelay);
+		log.info("Handshake verified, onion router's shared secret has been set.");
+
 	}
 
 	public byte[] createRelayCell(int command, int stream_id, byte[] payload) {
-		var relayCell = Bytes.concat(Utils.uByteToBytes(command), Utils.uShortToBytes(0),
-				Utils.uShortToBytes(stream_id), new byte[] { 0, 0, 0, 0 }, Utils.uShortToBytes(payload.length), payload,
+		var relayCell = Bytes.concat(new byte[] { (byte) command }, Utils.uShortToBytes(0),
+				Utils.uShortToBytes(stream_id), new byte[4], Utils.uShortToBytes(payload.length), payload,
 				new byte[498 - payload.length]);
 
 		var calDigest = Arrays.copyOf(getOnionRouters().get(getOnionRouters().size() - 1).getForwardDigest(relayCell),
 				4);
-		byte[] result = Bytes.concat(Arrays.copyOf(relayCell, 5), calDigest,
-				Arrays.copyOfRange(relayCell, 9, relayCell.length));
+		relayCell[5] = calDigest[0];
+		relayCell[6] = calDigest[1];
+		relayCell[7] = calDigest[2];
+		relayCell[8] = calDigest[3];
 
-		return encryptPayload(result);
+		return encryptPayload(relayCell);
 	}
 
 	public void startStream(String address, int port) throws Exception {
 
 		this.streamId++;
 
-		log.debug("Starting a stream with id: " + streamId);
+		log.info("Starting a stream with id: " + streamId);
+
+		System.out.println((address + ":" + port));
 
 		var relayPayload = Bytes.concat((address + ":" + port).getBytes(StandardCharsets.UTF_8), new byte[5]);
 
@@ -117,7 +123,7 @@ public class Circuit {
 
 		if (parsedResponse.getInt("command") != RelayCommand.RELAY_CONNECTED.getValue()) {
 
-			log.error("Creating a connection to the address failed");
+			log.severe("Creating a connection to the address failed");
 			throw new Exception("Creating a connection to the address failed");
 		}
 	}
@@ -141,13 +147,13 @@ public class Circuit {
 
 	public void extend(OnionRouter onionRouter) throws Exception {
 
-		log.debug("Extending the circuit to " + onionRouter.getNickname() + "...");
+		log.info("Extending the circuit to " + onionRouter.getNickname() + "...");
 
 		var keyAgreement = new KeyAgreementNTOR(onionRouter);
 
-		var relayPayload = Bytes.concat(new byte[] { 2, 0, 6 }, InetAddress.getByName(onionRouter.getIp()).getAddress(),
-				Utils.uShortToBytes(onionRouter.getTorPort()), new byte[] { 2, 0x14 },
-				HexFormat.of().parseHex(onionRouter.getIdentity()), Utils.uShortToBytes(2),
+		var relayPayload = Bytes.concat(new byte[] { 2, 0, 6 },
+				Inet4Address.getByName(onionRouter.getIp()).getAddress(), Utils.uShortToBytes(onionRouter.getTorPort()),
+				new byte[] { 2, 20 }, HexFormat.of().parseHex(onionRouter.getIdentity()), Utils.uShortToBytes(2),
 				Utils.uShortToBytes(keyAgreement.getOnionSkin().length), keyAgreement.getOnionSkin());
 
 		var relayCell = createRelayCell(RelayCommand.RELAY_EXTEND2.getValue(), 0, relayPayload);
@@ -159,14 +165,15 @@ public class Circuit {
 
 		getTorSocket().sendCell(cell);
 
+
 		var responseCell = new RelayCell(getTorSocket().retrieveCell());
 
 		if (responseCell.getCommand() != CommandType.RELAY.getValue()) {
-			log.error("Received command is not a RELAY.");
+			log.severe("Received command is not a RELAY.");
 			throw new Exception("Received command is not a RELAY.");
 		}
 
-		responseCell.setPayload(responseCell.getPayload());
+		responseCell.setPayload(decryptPayload(responseCell.getPayload()));
 
 		var parsedResponse = responseCell.parseCell();
 
@@ -189,6 +196,7 @@ public class Circuit {
 
 	public byte[] decryptPayload(byte[] datat) {
 		var data = datat.clone();
+
 		for (OnionRouter or : onionRouters) {
 			data = or.decrypt(data);
 
@@ -203,6 +211,7 @@ public class Circuit {
 			}
 
 		}
+		System.out.println("Returning null WTF");
 		return data;
 
 	}
