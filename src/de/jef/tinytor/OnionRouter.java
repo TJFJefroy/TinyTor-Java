@@ -8,7 +8,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,9 +31,9 @@ public class OnionRouter {
 	private String identity;
 	private String keyNtor;
 	private SecretKeySpec decryptionKey;
-	private MessageDigest backwardDigest;
+	private PMessageDigest backwardDigest;
 	private SecretKeySpec encryptionKey;
-	private MessageDigest forwardDigest;
+	private PMessageDigest forwardDigest;
 	private Cipher forwardCipher;
 	private Cipher backwardCipher;
 	private ArrayList<String> flags;
@@ -100,8 +99,8 @@ public class OnionRouter {
 		this.backwardCipher.init(Cipher.DECRYPT_MODE, this.decryptionKey, iv);
 	}
 
-	public MessageDigest setDigest(byte[] data) throws NoSuchAlgorithmException {
-		MessageDigest md = MessageDigest.getInstance("SHA-1");
+	public PMessageDigest setDigest(byte[] data) throws NoSuchAlgorithmException {
+		PMessageDigest md = new PMessageDigest("SHA-1");
 		md.update(data);
 		return md;
 	}
@@ -123,7 +122,7 @@ public class OnionRouter {
 	}
 
 	public byte[] decrypt(byte[] relay_payload) {
-		return this.backwardCipher.update(relay_payload);
+		return this.backwardCipher.update(relay_payload.clone());
 	}
 
 	public String getNickname() {
@@ -182,11 +181,11 @@ public class OnionRouter {
 		this.decryptionKey = decryptionKey;
 	}
 
-	public MessageDigest getBackwardDigest() {
+	public PMessageDigest getBackwardDigest() {
 		return backwardDigest;
 	}
 
-	public void setBackwardDigest(MessageDigest backwardDigest) {
+	public void setBackwardDigest(PMessageDigest backwardDigest) {
 		this.backwardDigest = backwardDigest;
 	}
 
@@ -198,11 +197,11 @@ public class OnionRouter {
 		this.encryptionKey = encryptionKey;
 	}
 
-	public MessageDigest getForwardDigest() {
+	public PMessageDigest getForwardDigest() {
 		return forwardDigest;
 	}
 
-	public void setForwardDigest(MessageDigest forwardDigest) {
+	public void setForwardDigest(PMessageDigest forwardDigest) {
 		this.forwardDigest = forwardDigest;
 	}
 

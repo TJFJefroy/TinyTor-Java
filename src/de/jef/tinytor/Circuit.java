@@ -103,7 +103,6 @@ public class Circuit {
 
 		log.info("Starting a stream with id: " + streamId);
 
-		System.out.println((address + ":" + port));
 
 		var relayPayload = Bytes.concat((address + ":" + port).getBytes(StandardCharsets.UTF_8), new byte[5]);
 
@@ -178,7 +177,7 @@ public class Circuit {
 		var parsedResponse = responseCell.parseCell();
 
 		keyAgreement.completeHandshake((byte[]) parsedResponse.get("Y"), (byte[]) parsedResponse.get("auth"));
-
+		
 		onionRouters.add(onionRouter);
 	}
 
@@ -196,6 +195,7 @@ public class Circuit {
 
 	public byte[] decryptPayload(byte[] datat) {
 		var data = datat.clone();
+		
 
 		for (OnionRouter or : onionRouters) {
 			data = or.decrypt(data);
@@ -211,7 +211,6 @@ public class Circuit {
 			}
 
 		}
-		System.out.println("Returning null WTF");
 		return data;
 
 	}
